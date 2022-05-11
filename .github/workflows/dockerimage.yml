@@ -39,12 +39,6 @@ on:
       dockerhub_token:
         description: the Docker Hub personal access token to use when uploading the image
         required: true
-      github_username:
-        description: the username to use when uploading the image to GitHub Container Registry (defaults to github.actor)
-        required: false
-      github_token:
-        description: the personal access token to use when uploading the image to GitHub Container Registry (defaults to secrets.GITHUB_TOKEN)
-        required: false
 
 jobs:
   image:
