@@ -1,0 +1,24 @@
+name: YAML Lint
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+
+jobs:
+  yamllint:
+    runs-on: ubuntu-latest
+
+    steps:
+      # https://github.com/actions/checkout
+      - name: Checkout the code
+        uses: actions/checkout@v3
+
+      - name: Check the YAML in .github and containers
+        run: |
+          docker run \
+            --rm \
+            --volume "$(pwd):/work" \
+            backplane/yamllint \
+              -f github \
+              .
