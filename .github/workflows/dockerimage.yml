@@ -97,7 +97,7 @@ jobs:
 
       # https://github.com/docker/build-push-action
       - name: Build and push Docker image
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: ${{ inputs.context_path }}
           push: ${{ inputs.push }}
