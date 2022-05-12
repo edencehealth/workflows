@@ -17,10 +17,10 @@ edencehealth/workflows/.github/workflows/dockerimage.yml@main
 input name       | required | type    | default                    | description
 ---------------- | -------- | ------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------
 `container_name` | True     | string  | &nbsp;                     | The base name of the docker container; e.g. just the `xyz` part of `edence/xyz:latest`
-`dockerhub_org`  | False    | string  | edence                     | The Docker Hub organization name or username where the image should be uploaded; e.g. just the `edence` part of `edence/xyz:latest`
-`github_org`     | False    | string  | edencehealth               | The GitHub organization name or username where the image should be uploaded; e.g. just the `edencehealth` part of `edencehealth/xyz:latest`
+`dockerhub_org`  | False    | string  | `edence`                   | The Docker Hub organization name or username where the image should be uploaded; e.g. just the `edence` part of `edence/xyz:latest`
+`github_org`     | False    | string  | `edencehealth`             | The GitHub organization name or username where the image should be uploaded; e.g. just the `edencehealth` part of `edencehealth/xyz:latest`
 `context_path`   | False    | string  | `.`                        | The path (relative within the repo) of the directory that contains the Dockerfile
-`platforms`      | False    | string  | linux/amd64,linux/arm64    | The comma-separated target platform(s) to use when building the image
+`platforms`      | False    | string  | `linux/amd64,linux/arm64`  | The comma-separated target platform(s) to use when building the image
 `push`           | False    | boolean | True if not a pull request | Whether to push the image to the container registries (building without pushing may be useful as a PR check)
 
 ### Secrets

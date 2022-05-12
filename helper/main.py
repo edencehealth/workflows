@@ -80,6 +80,7 @@ def main() -> int:
         help="path(s) to the workflow files to report on",
         nargs="+",
     )
+    args = argp.parse_args()
 
     k_input: Final = "input"
     k_secret: Final = "secret"
@@ -90,7 +91,6 @@ def main() -> int:
     inputs_headings: Final = [k_input, k_required, k_type, k_default, k_description]
     secrets_headings: Final = [k_secret, k_required, k_description]
 
-    args = argp.parse_args()
     for workflow_file in args.workflows:
         workflow_data = read_yaml(workflow_file)
         inputs_data = get_keypath(workflow_data, INPUTS_KEYPATH)
