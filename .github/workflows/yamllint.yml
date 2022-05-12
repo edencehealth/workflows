@@ -2,13 +2,13 @@ name: YAML Lint
 
 on:
   push:
-    branches: ['main']
+    branches:
+      - main
   pull_request:
 
 jobs:
   yamllint:
     runs-on: ubuntu-latest
-
     steps:
       # https://github.com/actions/checkout
       - name: Checkout the code

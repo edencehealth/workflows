@@ -4,40 +4,40 @@ on:
   workflow_call:
     inputs:
       container_name:
-        description: 'The base name of the docker container; e.g. just the "xyz" part of "edence/xyz:latest"'
+        description: The base name of the docker container; e.g. just the "xyz" part of "edence/xyz:latest"
         required: true
         type: string
       dockerhub_org:
-        default: 'edence'
-        description: 'The Docker Hub organization name or username where the image should be uploaded; e.g. just the "edence" part of "edence/xyz:latest"'
+        default: edence
+        description: The Docker Hub organization name or username where the image should be uploaded; e.g. just the "edence" part of "edence/xyz:latest"
         required: false
         type: string
       github_org:
-        default: 'edencehealth'
-        description: 'The GitHub organization name or username where the image should be uploaded; e.g. just the "edencehealth" part of "edencehealth/xyz:latest"'
+        default: edencehealth
+        description: The GitHub organization name or username where the image should be uploaded; e.g. just the "edencehealth" part of "edencehealth/xyz:latest"
         required: false
         type: string
       context_path:
-        default: '.'
-        description: 'The path (relative within the repo) of the directory that contains the Dockerfile'
+        default: .
+        description: The path (relative within the repo) of the directory that contains the Dockerfile
         required: false
         type: string
       platforms:
-        default: "linux/amd64,linux/arm64"
-        description: the comma-separated target platform(s) to use when building the image
+        default: linux/amd64,linux/arm64
+        description: The comma-separated target platform(s) to use when building the image
         required: false
         type: string
       push:
         default: ${{ github.event_name != 'pull_request' }}
-        description: whether to push the image to the container registries (building without pushing may be useful as a PR check)
+        description: Whether to push the image to the container registries (building without pushing may be useful as a PR check)
         required: false
         type: boolean
     secrets:
       dockerhub_username:
-        description: the Docker Hub username to use when uploading the image
+        description: The Docker Hub username to use when uploading the image
         required: true
       dockerhub_token:
-        description: the Docker Hub personal access token to use when uploading the image
+        description: The Docker Hub personal access token to use when uploading the image
         required: true
 
 jobs:
