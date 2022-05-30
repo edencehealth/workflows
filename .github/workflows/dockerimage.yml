@@ -93,9 +93,9 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            ${{ inputs.github_org != '' && format('ghcr.io/{0}/{1}', inputs.github_org, inputs.container_name) }}
-            ${{ inputs.dockerhub_org != '' && format('{0}/{1}', inputs.dockerhub_org, inputs.container_name) }}
-            ${{ inputs.registry_paths != '' && inputs.registry_paths }}
+            ${{ inputs.github_org != '' && format('ghcr.io/{0}/{1}', inputs.github_org, inputs.container_name) || '' }}
+            ${{ inputs.dockerhub_org != '' && format('{0}/{1}', inputs.dockerhub_org, inputs.container_name) || '' }}
+            ${{ inputs.registry_paths != '' && inputs.registry_paths || '' }}
           tags: |
             type=schedule
             type=semver,pattern={{version}}
@@ -120,6 +120,6 @@ jobs:
           build-args: |
             COMMIT_SHA=${{ github.sha }}
             GITHUB_TAG=${{ github.ref_name }}
-            ${{ inputs.build_args != '' && inputs.build_args }}
+            ${{ inputs.build_args != '' && inputs.build_args || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
