@@ -44,10 +44,16 @@ on:
       dockerhub_token:
         description: The Docker Hub personal access token to use when uploading the image
         required: true
+    outputs:
+      tags:
+        description: The docker tags that were ultimately generated
+        value: ${{ jobs.image.outputs.tags }}
 
 jobs:
   image:
     runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
     steps:
       # https://github.com/actions/checkout
       - name: Checkout the code
