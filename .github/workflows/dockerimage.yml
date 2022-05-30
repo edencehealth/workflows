@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       build_args:
-        default: ""
+        default: ''
         description: Additional build arguments in `KEY=VALUE` format, preferrably one per line
         required: false
         type: string
@@ -19,12 +19,12 @@ on:
         type: string
       dockerhub_org:
         default: edence
-        description: The Docker Hub organization name or username where the image should be uploaded; e.g. just the "edence" part of "edence/xyz:latest"
+        description: The Docker Hub organization name or username where the image should be uploaded; e.g. just the "edence" part of "edence/xyz:latest"; leave blank to skip the normal Docker Hub tag
         required: false
         type: string
       github_org:
         default: edencehealth
-        description: The GitHub organization name or username where the image should be uploaded; e.g. just the "edencehealth" part of "edencehealth/xyz:latest"
+        description: The GitHub organization name or username where the image should be uploaded; e.g. just the "edencehealth" part of "edencehealth/xyz:latest"; leave blank to skip the normal GitHub tag
         required: false
         type: string
       platforms:
@@ -37,6 +37,11 @@ on:
         description: Whether to push the image to the container registries (building without pushing may be useful as a PR check)
         required: false
         type: boolean
+      registry_paths:
+        default: ''
+        description: Additional registry paths in `KEY=VALUE` format, preferrably one per line
+        required: false
+        type: string
     secrets:
       dockerhub_username:
         description: The Docker Hub username to use when uploading the image
@@ -88,8 +93,9 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            ghcr.io/${{ inputs.github_org }}/${{ inputs.container_name }}
-            ${{ inputs.dockerhub_org }}/${{ inputs.container_name }}
+            ${{ inputs.github_org != '' && format('ghcr.io/{0}/{1}', inputs.github_org, inputs.container_name) }}
+            ${{ inputs.dockerhub_org != '' && format('{0}/{1}', inputs.dockerhub_org, inputs.container_name) }}
+            ${{ inputs.registry_paths != '' && inputs.registry_paths }}
           tags: |
             type=schedule
             type=semver,pattern={{version}}
@@ -114,6 +120,6 @@ jobs:
           build-args: |
             COMMIT_SHA=${{ github.sha }}
             GITHUB_TAG=${{ github.ref_name }}
-            ${{ inputs.build_args }}
+            ${{ inputs.build_args != '' && inputs.build_args }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
