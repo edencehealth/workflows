@@ -3,9 +3,19 @@ name: docker image
 on:
   workflow_call:
     inputs:
+      build_args:
+        default: ""
+        description: Additional build arguments in `KEY=VALUE` format, preferrably one per line
+        required: false
+        type: string
       container_name:
         description: The base name of the docker container; e.g. just the "xyz" part of "edence/xyz:latest"
         required: true
+        type: string
+      context_path:
+        default: .
+        description: The path (relative within the repo) of the directory that contains the Dockerfile
+        required: false
         type: string
       dockerhub_org:
         default: edence
@@ -15,11 +25,6 @@ on:
       github_org:
         default: edencehealth
         description: The GitHub organization name or username where the image should be uploaded; e.g. just the "edencehealth" part of "edencehealth/xyz:latest"
-        required: false
-        type: string
-      context_path:
-        default: .
-        description: The path (relative within the repo) of the directory that contains the Dockerfile
         required: false
         type: string
       platforms:
@@ -103,5 +108,6 @@ jobs:
           build-args: |
             COMMIT_SHA=${{ github.sha }}
             GITHUB_TAG=${{ github.ref_name }}
+            ${{ inputs.build_args }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
