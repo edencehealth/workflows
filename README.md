@@ -14,15 +14,16 @@ edencehealth/workflows/.github/workflows/dockerimage.yml@main
 
 ### Inputs
 
-input name       | required | type    | default                    | description
----------------- | -------- | ------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------
-`build_args`     | False    | string  | ``                         | Additional build arguments in `KEY=VALUE` format, preferrably one per line
-`container_name` | True     | string  | &nbsp;                     | The base name of the docker container; e.g. just the `xyz` part of `edence/xyz:latest`
-`context_path`   | False    | string  | `.`                        | The path (relative within the repo) of the directory that contains the Dockerfile
-`dockerhub_org`  | False    | string  | `edence`                   | The Docker Hub organization name or username where the image should be uploaded; e.g. just the `edence` part of `edence/xyz:latest`
-`github_org`     | False    | string  | `edencehealth`             | The GitHub organization name or username where the image should be uploaded; e.g. just the `edencehealth` part of `edencehealth/xyz:latest`
-`platforms`      | False    | string  | `linux/amd64,linux/arm64`  | The comma-separated target platform(s) to use when building the image
-`push`           | False    | boolean | True if not a pull request | Whether to push the image to the container registries (building without pushing may be useful as a PR check)
+input name       | required | type    | default                                      | description
+---------------- | -------- | ------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+`build_args`     | False    | string  | ""                                           | Additional build arguments in `KEY=VALUE` format, preferrably one per line
+`container_name` | True     | string  | `-`                                          | The base name of the docker container; e.g. just the "xyz" part of "edence/xyz:latest"
+`context_path`   | False    | string  | `.`                                          | The path (relative within the repo) of the directory that contains the Dockerfile
+`dockerhub_org`  | False    | string  | `edence`                                     | The Docker Hub organization name or username where the image should be uploaded; e.g. just the "edence" part of "edence/xyz:latest"; leave blank to skip the normal Docker Hub tag
+`github_org`     | False    | string  | `edencehealth`                               | The GitHub organization name or username where the image should be uploaded; e.g. just the "edencehealth" part of "edencehealth/xyz:latest"; leave blank to skip the normal GitHub tag
+`platforms`      | False    | string  | `linux/amd64,linux/arm64`                    | The comma-separated target platform(s) to use when building the image
+`push`           | False    | boolean | `${{ github.event_name != 'pull_request' }}` | Whether to push the image to the container registries (building without pushing may be useful as a PR check)
+`registry_paths` | False    | string  | ``                                           | Additional registry paths in `KEY=VALUE` format, preferrably one per line
 
 ### Secrets
 
@@ -32,7 +33,6 @@ secret name          | required | description
 -------------------- | -------- | --------------------------------------------------------------------
 `dockerhub_username` | True     | The Docker Hub username to use when uploading the image
 `dockerhub_token`    | True     | The Docker Hub personal access token to use when uploading the image
-
 
 ### Example
 
