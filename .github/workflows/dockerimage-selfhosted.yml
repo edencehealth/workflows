@@ -56,7 +56,7 @@ on:
 
 jobs:
   image:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     outputs:
       tags: ${{ steps.meta.outputs.tags }}
     steps:
