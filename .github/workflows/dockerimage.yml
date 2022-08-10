@@ -37,7 +37,6 @@ on:
         description: Whether to push the image to the container registries (building without pushing may be useful as a PR check)
         required: false
         type: boolean
-
       registry:
         default: ''
         description: Server address of an additional Docker registry to log into
@@ -53,7 +52,6 @@ on:
         description: Username or Key ID used to log into the registry
         required: false
         type: string
-
 
     secrets:
       dockerhub_username:
@@ -97,7 +95,7 @@ jobs:
           password: ${{ secrets.dockerhub_token }}
 
       # https://github.com/docker/login-action
-      - name: Login to github container registry
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         if: ${{ inputs.github_org != '' }}
         with:
@@ -106,13 +104,13 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # https://github.com/docker/login-action
-      - name: Login to a generic container registry
+      - name: Login to generic container registry
         uses: docker/login-action@v2
-        if: ${{ inputs.github_org != '' }}
+        if: ${{ inputs.registry != '' }}
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ${{ inputs.registry }}
+          username: ${{ inputs.registry_username }}
+          password: ${{ secrets.registry_password }}
 
       # https://github.com/docker/metadata-action
       - name: Extract Docker metadata
