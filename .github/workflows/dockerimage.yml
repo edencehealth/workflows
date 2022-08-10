@@ -37,18 +37,34 @@ on:
         description: Whether to push the image to the container registries (building without pushing may be useful as a PR check)
         required: false
         type: boolean
-      registry_paths:
+
+      registry:
         default: ''
-        description: Additional registry paths in `KEY=VALUE` format, preferrably one per line
+        description: Server address of an additional Docker registry to log into
         required: false
         type: string
+      registry_paths:
+        default: ''
+        description: Additional registry paths, preferrably one per line (for example "docker.io/bitnami/redis" without ":latest")
+        required: false
+        type: string
+      registry_username:
+        default: ''
+        description: Username or Key ID used to log into the registry
+        required: false
+        type: string
+
+
     secrets:
       dockerhub_username:
         description: The Docker Hub username to use when uploading the image
-        required: true
+        required: false
       dockerhub_token:
         description: The Docker Hub personal access token to use when uploading the image
         required: true
+      registry_password:
+        description: Password or token used to log into the additional registry
+        required: false
     outputs:
       tags:
         description: The docker tags that were ultimately generated
@@ -75,13 +91,24 @@ jobs:
       # https://github.com/docker/login-action
       - name: Login to Docker Hub
         uses: docker/login-action@v2
+        if: ${{ inputs.dockerhub_org != '' }}
         with:
           username: ${{ secrets.dockerhub_username }}
           password: ${{ secrets.dockerhub_token }}
 
       # https://github.com/docker/login-action
       - name: Login to github container registry
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
+        if: ${{ inputs.github_org != '' }}
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # https://github.com/docker/login-action
+      - name: Login to a generic container registry
+        uses: docker/login-action@v2
+        if: ${{ inputs.github_org != '' }}
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
