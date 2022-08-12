@@ -22,6 +22,10 @@ on:
         description: The Docker Hub organization name or username where the image should be uploaded; e.g. just the "edence" part of "edence/xyz:latest"; leave blank to skip the normal Docker Hub tag
         required: false
         type: string
+      dockerhub_username:
+        description: The Docker Hub username to use when uploading the image
+        required: false
+        type: string
       github_org:
         default: edencehealth
         description: The GitHub organization name or username where the image should be uploaded; e.g. just the "edencehealth" part of "edencehealth/xyz:latest"; leave blank to skip the normal GitHub tag
@@ -52,11 +56,7 @@ on:
         description: Username or Key ID used to log into the registry
         required: false
         type: string
-
     secrets:
-      dockerhub_username:
-        description: The Docker Hub username to use when uploading the image
-        required: false
       dockerhub_token:
         description: The Docker Hub personal access token to use when uploading the image
         required: true
@@ -91,7 +91,7 @@ jobs:
         uses: docker/login-action@v2
         if: ${{ inputs.dockerhub_org != '' }}
         with:
-          username: ${{ secrets.dockerhub_username }}
+          username: ${{ inputs.dockerhub_username }}
           password: ${{ secrets.dockerhub_token }}
 
       # https://github.com/docker/login-action
