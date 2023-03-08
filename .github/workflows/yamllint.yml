@@ -1,6 +1,6 @@
 name: YAML Lint
 
-on:
+"on":
   push:
     branches:
       - main
@@ -15,10 +15,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Check the YAML in .github and containers
-        run: |
-          docker run \
-            --rm \
-            --volume "$(pwd):/work" \
-            backplane/yamllint \
-              -f github \
-              .
+        run: |-
+          #!/bin/sh
+          set -eux
+          docker run --rm -v "$(pwd):/work" backplane/yamllint -f github .

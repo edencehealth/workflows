@@ -1,49 +1,112 @@
-name: docker image
+name: docker
 
-on:
+"on":
   workflow_call:
     inputs:
+      build_args:
+        description: >-
+          Additional build arguments in `KEY=VALUE` format, preferrably one per
+          line
+        required: false
+        type: string
+        default: ""
       container_name:
-        description: The base name of the docker container; e.g. just the "xyz" part of "edence/xyz:latest"
+        description: >-
+          The base name of the docker container; e.g. just the "xyz" part of
+          "edence/xyz:latest"
         required: true
-        type: string
-      dockerhub_org:
-        default: edence
-        description: The Docker Hub organization name or username where the image should be uploaded; e.g. just the "edence" part of "edence/xyz:latest"
-        required: false
-        type: string
-      github_org:
-        default: edencehealth
-        description: The GitHub organization name or username where the image should be uploaded; e.g. just the "edencehealth" part of "edencehealth/xyz:latest"
-        required: false
         type: string
       context_path:
+        description: >-
+          The path (relative within the repo) of the directory that contains
+          the Dockerfile
+        required: false
+        type: string
         default: .
-        description: The path (relative within the repo) of the directory that contains the Dockerfile
+      dockerhub_org:
+        description: >-
+          The Docker Hub organization name or username where the image should
+          be uploaded; e.g. just the "edence" part of "edence/xyz:latest";
+          leave blank to skip the normal Docker Hub tag
         required: false
         type: string
+        default: edence
+      github_org:
+        description: >-
+          The GitHub organization name or username where the image should be
+          uploaded; e.g. just the "edencehealth" part of
+          "edencehealth/xyz:latest"; leave blank to skip the normal GitHub tag
+        required: false
+        type: string
+        default: edencehealth
       platforms:
-        default: linux/amd64,linux/arm64
-        description: The comma-separated target platform(s) to use when building the image
+        description: >-
+          The comma-separated target platform(s) to use when building the image
         required: false
         type: string
+        default: linux/amd64,linux/arm64
       push:
-        default: ${{ github.event_name != 'pull_request' }}
-        description: Whether to push the image to the container registries (building without pushing may be useful as a PR check)
+        description: >-
+          Whether to push the image to the container registries (building
+          without pushing may be useful as a PR check)
         required: false
         type: boolean
+        default: ${{ github.event_name != 'pull_request' }}
+      registry:
+        description: >-
+          Server address of an additional Docker registry to log into
+        required: false
+        type: string
+        default: ""
+      registry_paths:
+        description: >-
+          Additional registry paths, preferrably one per line (for example
+          "docker.io/bitnami/redis" without ":latest")
+        required: false
+        type: string
+        default: ""
+      runs_on:
+        description: >-
+          Quoted JSON string specifying a list of Workflow Runner machine
+          types/labels to run the job on (note the variable name contains an
+          underscore not a dash) - the value is processed using `fromJson`;
+          example self-hosted runner value "['self-hosted', 'linux']"
+        required: false
+        type: string
+        default: |-
+          ["ubuntu-latest"]
+    outputs:
+      tags:
+        description: >-
+          The docker tags that were ultimately generated
+        value: ${{ jobs.image.outputs.tags }}
     secrets:
-      dockerhub_username:
-        description: The Docker Hub username to use when uploading the image
-        required: true
       dockerhub_token:
-        description: The Docker Hub personal access token to use when uploading the image
+        description: >-
+          The Docker Hub personal access token to use when uploading the image
         required: true
+      dockerhub_username:
+        description: >-
+          The Docker Hub username to use when uploading the image
+        required: false
+      registry_password:
+        description: >-
+          Password or token used to log into the additional registry
+        required: false
+      registry_username:
+        description: >-
+          Username or Key ID used to log into the registry
+        required: false
 
 jobs:
   image:
-    runs-on: ubuntu-latest
+    # https://docs.github.com/en/actions/examples/using-scripts-to-test-your-code-on-a-runner#example-workflow
+    runs-on: ${{ fromJSON(inputs.runs_on) }}
+    outputs:
+      tags: |-
+        ${{ steps.meta.outputs.tags }}
     steps:
+
       # https://github.com/actions/checkout
       - name: Checkout the code
         uses: actions/checkout@v3
@@ -58,28 +121,40 @@ jobs:
 
       # https://github.com/docker/login-action
       - name: Login to Docker Hub
+        if: ${{ inputs.dockerhub_org != '' }}
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.dockerhub_username }}
           password: ${{ secrets.dockerhub_token }}
 
       # https://github.com/docker/login-action
-      - name: Login to github container registry
-        uses: docker/login-action@v1
+      - name: Login to GitHub Container Registry
+        if: ${{ inputs.github_org != '' }}
+        uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      # https://github.com/docker/login-action
+      - name: Login to generic container registry
+        if: ${{ inputs.registry != '' }}
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ inputs.registry }}
+          username: ${{ secrets.registry_username }}
+          password: ${{ secrets.registry_password }}
 
       # https://github.com/docker/metadata-action
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: |
-            ghcr.io/${{ inputs.github_org }}/${{ inputs.container_name }}
-            ${{ inputs.dockerhub_org }}/${{ inputs.container_name }}
-          tags: |
+          images: |-
+            ${{ inputs.github_org != '' && format('ghcr.io/{0}/{1}', inputs.github_org, inputs.container_name) || '' }}
+            ${{ inputs.dockerhub_org != '' && format('{0}/{1}', inputs.dockerhub_org, inputs.container_name) || '' }}
+            ${{ inputs.registry_paths != '' && inputs.registry_paths || '' }}
+          tags: |-
             type=schedule
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -93,15 +168,16 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
-          context: ${{ inputs.context_path }}
-          push: ${{ inputs.push }}
-          tags: |
-            ${{ steps.meta.outputs.tags }}
-          labels: |
-            ${{ steps.meta.outputs.labels }}
-          platforms: ${{ inputs.platforms }}
-          build-args: |
+          build-args: |-
             COMMIT_SHA=${{ github.sha }}
             GITHUB_TAG=${{ github.ref_name }}
+            ${{ inputs.build_args != '' && inputs.build_args || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          context: ${{ inputs.context_path }}
+          labels: |-
+            ${{ steps.meta.outputs.labels }}
+          platforms: ${{ inputs.platforms }}
+          push: ${{ inputs.push }}
+          tags: |-
+            ${{ steps.meta.outputs.tags }}
