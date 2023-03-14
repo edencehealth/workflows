@@ -5,6 +5,8 @@ name: YAML Lint
     branches:
       - main
   pull_request:
+    branches:
+      - main
 
 jobs:
   yamllint:
