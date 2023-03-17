@@ -171,6 +171,8 @@ jobs:
           build-args: |-
             COMMIT_SHA=${{ github.sha }}
             GITHUB_TAG=${{ github.ref_name }}
+            GIT_COMMIT=${{ github.sha }}
+            GIT_TAG=${{ github.ref_name }}
             ${{ inputs.build_args != '' && inputs.build_args || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
