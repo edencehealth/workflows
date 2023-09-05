@@ -57,7 +57,7 @@ def print_leaf(data: Any, fields: List[str]):
     # print a markdown table to document the inputs of the given workflow
     print_heading(fields)
     for item_name, item in data.items():
-        cells = [item_name] + [str(item.get(k, "-")) for k in fields[1:]]
+        cells = [f"`{item_name}`"] + [f'`{repr(item.get(k, "-"))}`' for k in fields[1:]]
         print(CELL_SEP.join(cells))
 
 
