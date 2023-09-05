@@ -31,6 +31,7 @@ jobs:
           set -eux
           [ -f "requirements.txt" ] && pip install --upgrade requirements.txt
           [ -f "requirements-dev.txt" ] && pip install --upgrade requirements-dev.txt
+          true
 
       # https://github.com/pre-commit/action
       - name: run pre-commit
