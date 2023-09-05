@@ -14,7 +14,7 @@ jobs:
     steps:
       # https://github.com/actions/checkout
       - name: Checkout the code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check the YAML in .github and containers
         run: |-
