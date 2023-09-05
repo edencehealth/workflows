@@ -60,7 +60,7 @@ name: docker
           readme file. The Docker Hub short description will be set from the
           GitHub repo's description. This only runs if the "latest" image tag
           would be updated.
-          (example value: "README.md")
+          (example value: "./README.md")
         required: false
         type: string
         default: ""
@@ -204,17 +204,6 @@ jobs:
       ${{ inputs.container_name != '' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Get Description
-        id: repo
-        run: |
-          #!/bin/sh
-          set -eu
-          DESC=$(curl -fsSL \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}" \
-            | jq .description -r)
-          printf '%s=%s\n' "description" "$DESC" >"$GITHUB_OUTPUT"
-
       # https://github.com/peter-evans/dockerhub-description
       - name: Update Docker Hub Description
         uses: peter-evans/dockerhub-description@v3
@@ -222,5 +211,5 @@ jobs:
           username: ${{ secrets.dockerhub_username }}
           password: ${{ secrets.dockerhub_token }}
           repository: format('{0}/{1}', inputs.dockerhub_org, inputs.container_name)
-          short-description: ${{ steps.repo.outputs.description }}
+          short-description: ${{ github.event.repository.description }}
           readme-filepath: ${{ inputs.push_readme }}

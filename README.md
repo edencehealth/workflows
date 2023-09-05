@@ -84,6 +84,7 @@ jobs:
     with:
       container_name: demo_etl
       context_path: etl
+      push_readme: ./README.md
     secrets: inherit
     build-args: |
       DEV_BUILD=1
