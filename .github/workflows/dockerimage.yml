@@ -52,6 +52,18 @@ name: docker
         required: false
         type: boolean
         default: ${{ github.event_name != 'pull_request' }}
+      push_readme:
+        description: >-
+          Path of the README file to push to Docker Hub. This runs only if the
+          dockerhub_org and container_name inputs are non-empty. The Docker Hub
+          repo's long_description will be set to the contents of the given
+          readme file. The Docker Hub short description will be set from the
+          GitHub repo's description. This only runs if the "latest" image tag
+          would be updated.
+          (example value: "README.md")
+        required: false
+        type: string
+        default: ""
       registry:
         description: >-
           Server address of an additional Docker registry to log into
@@ -109,7 +121,7 @@ jobs:
 
       # https://github.com/actions/checkout
       - name: Checkout the code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # https://github.com/docker/setup-qemu-action
       - name: Set up QEMU
@@ -183,3 +195,32 @@ jobs:
           push: ${{ inputs.push }}
           tags: |-
             ${{ steps.meta.outputs.tags }}
+
+  readme:
+    if: >-
+      ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }} &&
+      ${{ inputs.push_readme != '' }} &&
+      ${{ inputs.dockerhub_org != '' }} &&
+      ${{ inputs.container_name != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Description
+        id: repo
+        run: |
+          #!/bin/sh
+          set -eu
+          DESC=$(curl -fsSL \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}" \
+            | jq .description -r)
+          printf '%s=%s\n' "description" "$DESC" >"$GITHUB_OUTPUT"
+
+      # https://github.com/peter-evans/dockerhub-description
+      - name: Update Docker Hub Description
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ secrets.dockerhub_username }}
+          password: ${{ secrets.dockerhub_token }}
+          repository: format('{0}/{1}', inputs.dockerhub_org, inputs.container_name)
+          short-description: ${{ steps.repo.outputs.description }}
+          readme-filepath: ${{ inputs.push_readme }}
