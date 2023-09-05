@@ -1,0 +1,39 @@
+# workflow which lints and checks the rust code on every push and pull request
+name: Check
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+
+      # https://github.com/actions/checkout
+      - name: checkout
+        uses: actions/checkout@v3
+
+      # https://github.com/actions/setup-python
+      - name: set up python
+        uses: actions/setup-python@v4
+        with:
+          cache: 'pip' # caching pip dependencies
+          python-version: '3.11'
+
+      - name: install python packages
+        run: |-
+          #!/bin/sh
+          SELF=$(basename "$0" ".sh")
+          printf '%s\n' "${SELF} running as $(id) in $(pwd)" >&2;
+          set -eux
+          [ -f "requirements.txt" ] && pip install --upgrade requirements.txt
+          [ -f "requirements-dev.txt" ] && pip install --upgrade requirements-dev.txt
+
+      # https://github.com/pre-commit/action
+      - name: run pre-commit
+        uses: pre-commit/action@v3.0.0
+        env:
+          SKIP: no-commit-to-branch
