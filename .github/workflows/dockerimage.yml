@@ -204,6 +204,14 @@ jobs:
       ${{ inputs.container_name != '' }}
     runs-on: ubuntu-latest
     steps:
+      # https://github.com/actions/checkout
+      - name: Checkout the code
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            ${{ inputs.push_readme }}
+          sparse-checkout-cone-mode: false
+
       # https://github.com/peter-evans/dockerhub-description
       - name: Update Docker Hub Description
         uses: peter-evans/dockerhub-description@v3
