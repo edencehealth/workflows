@@ -20,7 +20,7 @@ jobs:
       - name: set up python
         uses: actions/setup-python@v4
         with:
-          cache: 'pip' # caching pip dependencies
+          # cache: 'pip' # caching pip dependencies
           python-version: '3.11'
 
       # https://github.com/pre-commit/action
