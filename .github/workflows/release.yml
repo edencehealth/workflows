@@ -1,3 +1,22 @@
+# When we push a semver tag to this repo, (for example "v2.3.4") this file is
+# responsible for also updating the major and minor tags that correspond to it
+# (in this example, "v2" and "v2.3"). This way downstream users can choose how
+# much change they want to allow in thier workflows:
+#
+# * edencehealth/workflows/.github/workflows/dockerimage.yml@main
+#   unstable "latest" version, likely to break downstream users eventually
+#
+# * edencehealth/workflows/.github/workflows/dockerimage.yml@v2
+#   the major version 2, should generally provide a stable interface and add
+#   backward-compatible features
+#
+# * edencehealth/workflows/.github/workflows/dockerimage.yml@v2.3
+#   the minor version 2.3, should be very stable and make no breaking changes
+#   but it should include bug fixes
+#
+# * edencehealth/workflows/.github/workflows/dockerimage.yml@v2.3.4
+#   a fixed tag 2.3.4, should not change at all (aka no bug fixes!)
+
 name: release
 
 "on":
@@ -20,7 +39,9 @@ jobs:
         run: |
           #!/usr/bin/env python3
           """
-          utility for pushing 1- and 2-element semantic version tags from a semver push
+          utility for pushing 1- and 2-element semantic version tags from a full
+          semver push. e.g. when you push v1.2.3 this script also updates v1.2
+          and v1
           """
           # https://github.com/actions/toolkit/blob/master/docs/action-versioning.md#recommendations
 
