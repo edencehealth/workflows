@@ -160,7 +160,7 @@ jobs:
       # https://github.com/docker/metadata-action
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           images: |-
             ${{ inputs.github_org != '' && format('ghcr.io/{0}/{1}', inputs.github_org, inputs.container_name) || '' }}
