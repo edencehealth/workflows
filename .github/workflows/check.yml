@@ -11,20 +11,19 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-
       # https://github.com/actions/checkout
       - name: checkout
         uses: actions/checkout@v4
 
       # https://github.com/actions/setup-python
       - name: set up python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           # cache: 'pip' # caching pip dependencies
-          python-version: '3.11'
+          python-version: "3.13"
 
       # https://github.com/pre-commit/action
       - name: run pre-commit
-        uses: pre-commit/action@v3.0.0
+        uses: pre-commit/action@v3.0.1
         env:
           SKIP: no-commit-to-branch
