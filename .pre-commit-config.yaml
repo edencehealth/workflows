@@ -4,7 +4,7 @@ default_language_version:
   python: python3.11
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v5.0.0
     hooks:
       - id: check-added-large-files
       - id: check-case-conflict
@@ -22,11 +22,11 @@ repos:
           - --branch
           - main
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.6.25
+    rev: v1.7.4
     hooks:
       - id: actionlint-docker
         name: check github workflows with actionlint
   - repo: https://github.com/koalaman/shellcheck-precommit
-    rev: v0.9.0
+    rev: v0.10.0
     hooks:
       - id: shellcheck
