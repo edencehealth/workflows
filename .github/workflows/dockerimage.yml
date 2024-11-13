@@ -30,7 +30,7 @@ name: docker
           leave blank to skip the normal Docker Hub tag
         required: false
         type: string
-        default: edence
+        default: ${{ github.repository_owner == 'edencehealth' && 'edence' || github.repository_owner }}
       github_org:
         description: >-
           The GitHub organization name or username where the image should be
@@ -38,7 +38,7 @@ name: docker
           "edencehealth/xyz:latest"; leave blank to skip the normal GitHub tag
         required: false
         type: string
-        default: edencehealth
+        default: ${{ github.repository_owner }}
       platforms:
         description: >-
           The comma-separated target platform(s) to use when building the image
