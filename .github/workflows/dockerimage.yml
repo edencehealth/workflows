@@ -96,7 +96,7 @@ name: docker
       dockerhub_token:
         description: >-
           The Docker Hub personal access token to use when uploading the image
-        required: true
+        required: false
       dockerhub_username:
         description: >-
           The Docker Hub username to use when uploading the image
@@ -191,7 +191,14 @@ jobs:
           labels: |-
             ${{ steps.meta.outputs.labels }}
           platforms: ${{ inputs.platforms }}
-          push: ${{ inputs.push }}
+          push: >-
+            ${{
+              inputs.push && (
+                inputs.dockerhub_org != '' ||
+                inputs.github_org != '' ||
+                inputs.registry != ''
+              )
+            }}
           tags: |-
             ${{ steps.meta.outputs.tags }}
 
