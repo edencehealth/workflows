@@ -39,6 +39,13 @@ name: docker
         required: false
         type: string
         default: ${{ github.repository_owner }}
+      lfs:
+        description: >-
+          whether to include Git Large File Storage files when checking-out the
+          code repo
+        required: false
+        type: boolean
+        default: false
       platforms:
         description: >-
           The comma-separated target platform(s) to use when building the image
@@ -121,6 +128,8 @@ jobs:
       # https://github.com/actions/checkout
       - name: Checkout the code
         uses: actions/checkout@v4
+        with:
+          lfs: ${{ inputs.lfs }}
 
       # https://github.com/docker/setup-qemu-action
       - name: Set up QEMU
