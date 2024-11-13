@@ -114,6 +114,8 @@ jobs:
   image:
     # https://docs.github.com/en/actions/examples/using-scripts-to-test-your-code-on-a-runner#example-workflow
     runs-on: ${{ fromJSON(inputs.runs_on) }}
+    permissions:
+      packages: write
     outputs:
       tags: |-
         ${{ steps.meta.outputs.tags }}
