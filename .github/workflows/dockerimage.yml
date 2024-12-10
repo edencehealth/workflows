@@ -10,6 +10,13 @@ name: docker
         required: false
         type: string
         default: ""
+      build_secrets:
+        description: >-
+          Additional secrets to expose to the container build process. NOTE:
+          GITHUB_TOKEN is exposed to the build by default.
+        required: false
+        type: string
+        default: ""
       container_name:
         description: >-
           The base name of the docker container; e.g. just the "xyz" part of
@@ -210,6 +217,9 @@ jobs:
             }}
           tags: |-
             ${{ steps.meta.outputs.tags }}
+          secrets: |
+            "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}"
+            ${{ inputs.build_secrets != '' && inputs.build_secrets || '' }}
 
   readme:
     if: >-
