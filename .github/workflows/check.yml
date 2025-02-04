@@ -27,3 +27,11 @@ jobs:
         uses: pre-commit/action@v3.0.1
         env:
           SKIP: no-commit-to-branch
+
+  trialrun:
+    needs: check
+    uses: "./.github/workflows/dockerimage.yml"
+    with:
+      container_name: ci-workflow-tester
+      context_path: .tester
+    secrets: inherit
