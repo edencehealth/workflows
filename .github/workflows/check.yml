@@ -34,4 +34,5 @@ jobs:
     with:
       container_name: ci-workflow-tester
       context_path: .tester
+      push: true
     secrets: inherit
