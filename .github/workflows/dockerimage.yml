@@ -355,9 +355,9 @@ jobs:
 
           for name in names:
             create_cmd = "docker buildx imagetools create".split()
-            for tag in metadata.tags:
+            for tag in metadata['tags']:
               create_cmd.extend(["--tag", tag])
-            for annotation in metadata.annotations:
+            for annotation in metadata['annotations']:
               create_cmd.extend(["--annotation", annotation])
             for digest in os.listdir("/tmp/digests"):
               create_cmd.append(f"{name}@sha256:{digest}")
@@ -365,7 +365,7 @@ jobs:
             subprocess.check_call(create_cmd)
 
             # get the first tag that corresponds with name (e.g. tag "edence/ohdsi-ares:pr-6" corresponds with name "edence/ohdsi-ares")
-            first_tag = next(tag for tag in metadata.tags if tag.startswith(name))
+            first_tag = next(tag for tag in metadata['tags'] if tag.startswith(name))
 
             inspect_cmd = "docker buildx imagetools inspect".split()
             inspect_cmd.append(first_tag)
