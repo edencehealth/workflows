@@ -30,7 +30,7 @@ name: docker
           leave blank to skip the normal Docker Hub tag
         required: false
         type: string
-        default: edence
+        default: ${{ github.repository_owner == 'edencehealth' && 'edence' || github.repository_owner }}
       github_org:
         description: >-
           The GitHub organization name or username where the image should be
@@ -38,7 +38,14 @@ name: docker
           "edencehealth/xyz:latest"; leave blank to skip the normal GitHub tag
         required: false
         type: string
-        default: edencehealth
+        default: ${{ github.repository_owner }}
+      lfs:
+        description: >-
+          whether to include Git Large File Storage files when checking-out the
+          code repo
+        required: false
+        type: boolean
+        default: false
       platforms:
         description: >-
           Quoted JSON string specifying a list of target platform(s) to use
@@ -98,7 +105,7 @@ name: docker
       dockerhub_token:
         description: >-
           The Docker Hub personal access token to use when uploading the image
-        required: true
+        required: false
       dockerhub_username:
         description: >-
           The Docker Hub username to use when uploading the image
@@ -126,11 +133,15 @@ jobs:
         ${{ steps.meta.outputs.tags }}
       digest: ${{ steps.build.outputs.digest }}
       namelist: ${{ steps.convert.outputs.namelist }}
+    env:
+      DOCKER_LOGIN: ${{ secrets.dockerhub_username != '' && secrets.dockerhub_token != '' }}
+      REGISTRY_LOGIN: ${{ secrets.registry_username != '' && secrets.registry_password != '' }}
     steps:
-
       # https://github.com/actions/checkout
       - name: Checkout the code
         uses: actions/checkout@v4
+        with:
+          lfs: ${{ inputs.lfs }}
 
       # https://github.com/docker/setup-qemu-action
       - name: Set up QEMU
@@ -142,7 +153,7 @@ jobs:
 
       # https://github.com/docker/login-action
       - name: Login to Docker Hub
-        if: ${{ inputs.dockerhub_org != '' }}
+        if: ${{ inputs.dockerhub_org != '' && env.DOCKER_LOGIN == 'true' }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.dockerhub_username }}
@@ -159,7 +170,7 @@ jobs:
 
       # https://github.com/docker/login-action
       - name: Login to generic container registry
-        if: ${{ inputs.registry != '' }}
+        if: ${{ inputs.registry != '' && env.REGISTRY_LOGIN == 'true' }}
         uses: docker/login-action@v3
         with:
           registry: ${{ inputs.registry }}
@@ -173,8 +184,8 @@ jobs:
         with:
           images: |-
             ${{ inputs.github_org != '' && format('ghcr.io/{0}/{1}', inputs.github_org, inputs.container_name) || '' }}
-            ${{ inputs.dockerhub_org != '' && format('{0}/{1}', inputs.dockerhub_org, inputs.container_name) || '' }}
-            ${{ inputs.registry_paths != '' && inputs.registry_paths || '' }}
+            ${{ inputs.dockerhub_org != '' && env.DOCKER_LOGIN == 'true' && format('{0}/{1}', inputs.dockerhub_org, inputs.container_name) || '' }}
+            ${{ inputs.registry_paths != '' && env.REGISTRY_LOGIN == 'true' && inputs.registry_paths || '' }}
           tags: |-
             type=schedule
             type=semver,pattern={{version}}
@@ -225,7 +236,7 @@ jobs:
       # https://github.com/docker/build-push-action
       - name: Build and push-by-digest
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           build-args: |-
             COMMIT_SHA=${{ github.sha }}
@@ -238,8 +249,7 @@ jobs:
           context: ${{ inputs.context_path }}
           labels: |-
             ${{ steps.meta.outputs.labels }}
-          # outputs: type=image,name=${{ steps.convert.outputs.quoted_namelist }},push-by-digest=true,name-canonical=true,push=${{ inputs.push }}
-          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=${{ steps.convert.outputs.quoted_namelist }},push-by-digest=true,name-canonical=true,push=${{ inputs.push }}
           platforms: ${{ steps.convert.outputs.platform }}
           tags: |-
             ${{ steps.meta.outputs.tags }}
@@ -378,7 +388,7 @@ jobs:
 
       # https://github.com/peter-evans/dockerhub-description
       - name: Update Docker Hub Description
-        uses: peter-evans/dockerhub-description@v3
+        uses: peter-evans/dockerhub-description@v4
         with:
           username: ${{ secrets.dockerhub_username }}
           password: ${{ secrets.dockerhub_token }}
