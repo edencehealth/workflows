@@ -249,7 +249,7 @@ jobs:
           context: ${{ inputs.context_path }}
           labels: |-
             ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ steps.convert.outputs.quoted_namelist }},push-by-digest=true,name-canonical=true,push=${{ inputs.push }}
+          outputs: type=image,name=${{ steps.convert.outputs.namelist }},push-by-digest=true,name-canonical=true,push=${{ inputs.push }}
           platforms: ${{ steps.convert.outputs.platform }}
           tags: |-
             ${{ steps.meta.outputs.tags }}
