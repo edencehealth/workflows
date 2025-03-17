@@ -359,7 +359,7 @@ jobs:
             for tag in metadata['tags']:
               create_cmd.extend(["--tag", tag])
             for annotation in metadata['annotations']:
-              create_cmd.extend(["--annotation", annotation.replace("manifest:", "", 1)])
+              create_cmd.extend(["--annotation", annotation.replace("manifest:", "index:", 1)])
             for digest in os.listdir(os.environ["DIGESTS"]):
               create_cmd.append(f"{name}@sha256:{digest}")
 
