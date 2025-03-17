@@ -222,7 +222,7 @@ jobs:
           #   "ghcr.io/edencehealth/ohdsi-ares:sha-16b6dae",
           #   "edence/ohdsi-ares:pr-6",
           #   "edence/ohdsi-ares:sha-16b6dae"
-          # ],
+          # ]
           # the namelist is "edence/ohdsi-ares,ghcr.io/edencehealth/ohdsi-ares"
 
           base_tag_set = {tag.split(":", 1)[0] for tag in tags.splitlines()}
@@ -251,8 +251,6 @@ jobs:
             ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ steps.convert.outputs.namelist }},push-by-digest=true,name-canonical=true,push=${{ inputs.push }}
           platforms: ${{ steps.convert.outputs.platform }}
-          tags: |-
-            ${{ steps.meta.outputs.tags }}
 
       - name: Export digest
         run: |
