@@ -207,31 +207,28 @@ jobs:
           import os
           import shlex
 
+
           def gh_output(name: str, value: str) -> None:
               """write a value to the github workflow step output"""
               output_file = os.environ["GITHUB_OUTPUT"]
               with open(output_file, "at", encoding="utf-8") as out:
                   out.write(f"{name}={value}\n")
 
+
           tags = os.environ["TAGS"]
           runner = os.environ["RUNNER"]
+          # given: tags = [ "ghcr.io/edencehealth/ohdsi-ares:pr-6",
+          #                 "ghcr.io/edencehealth/ohdsi-ares:sha-16b6dae",
+          #                 "edence/ohdsi-ares:pr-6",
+          #                 "edence/ohdsi-ares:sha-16b6dae" ]
+          # namelist is: "edence/ohdsi-ares,ghcr.io/edencehealth/ohdsi-ares"
+          name_set = {tag.split(":", 1)[0] for tag in tags.splitlines()}
+          namelist = shlex.quote(",".join(sorted(name_set)))
 
-          # with tags like this:
-          # "tags": [
-          #   "ghcr.io/edencehealth/ohdsi-ares:pr-6",
-          #   "ghcr.io/edencehealth/ohdsi-ares:sha-16b6dae",
-          #   "edence/ohdsi-ares:pr-6",
-          #   "edence/ohdsi-ares:sha-16b6dae"
-          # ]
-          # the namelist is "edence/ohdsi-ares,ghcr.io/edencehealth/ohdsi-ares"
-
-          base_tag_set = {tag.split(":", 1)[0] for tag in tags.splitlines()}
-          namelist = shlex.quote(",".join(sorted(base_tag_set))) # edence/ohdsi-ares,ghcr.io/edencehealth/ohdsi-ares
-
-          gh_output("namelist", namelist) # edence/ohdsi-ares,ghcr.io/edencehealth/ohdsi-ares
-          gh_output("quoted_namelist", f'\"name={namelist}\"') # once again, with FEELING!
+          gh_output("namelist", namelist)  # edence/ohdsi-ares,ghcr.io/edencehealth/ohdsi-ares
+          gh_output("quoted_namelist", f'"name={namelist}"')  # once again, with FEELING!
           gh_output("platform", "linux/arm64" if "arm" in runner else "linux/amd64")
-          gh_output("platform_pair", runner.replace('/', '-')) # e.g. "linux-amd64"
+          gh_output("platform_pair", runner.replace("/", "-"))  # e.g. "linux-amd64"
 
       # https://github.com/docker/build-push-action
       - name: Build and push-by-digest
@@ -345,29 +342,33 @@ jobs:
           import json
           import subprocess
 
+
           def gh_output(name: str, value: str) -> None:
-              """write a value to the github workflow step output"""
-              output_file = os.environ["GITHUB_OUTPUT"]
-              with open(output_file, "at", encoding="utf-8") as out:
-                  out.write(f"{name}={value}\n")
+            """write a value to the github workflow step output"""
+            output_file = os.environ["GITHUB_OUTPUT"]
+            with open(output_file, "at", encoding="utf-8") as out:
+              out.write(f"{name}={value}\n")
+
 
           metadata = json.loads(os.environ["DOCKER_METADATA_OUTPUT_JSON"])
           names = os.environ["NAMELIST"].split(",")
+          digests_dir = os.environ["DIGESTS"]
 
           for name in names:
-            create_cmd = "docker buildx imagetools create".split()
-            for tag in metadata['tags']:
-              create_cmd.extend(["--tag", tag])
-            for annotation in metadata['annotations']:
-              create_cmd.extend(["--annotation", annotation.replace("manifest:", "index:", 1)])
-            for digest in os.listdir(os.environ["DIGESTS"]):
-              create_cmd.append(f"{name}@sha256:{digest}")
+            # get the first tag that corresponds with name (e.g. tag "edence/ohdsi-ares:pr-6" corresponds with name "edence/ohdsi-ares")
+            first_tag = next(tag for tag in metadata["tags"] if tag.startswith(name))
 
+            # create and push the manifest
+            create_cmd = "docker buildx imagetools create".split()
+            for tag in metadata["tags"]:
+              create_cmd.extend(["--tag", tag])
+            for annotation in metadata["annotations"]:
+              create_cmd.extend(["--annotation", annotation.replace("manifest:", "index:", 1)])
+            for digest in os.listdir(digests_dir):
+              create_cmd.append(f"{name}@sha256:{digest}")
             subprocess.check_call(create_cmd)
 
-            # get the first tag that corresponds with name (e.g. tag "edence/ohdsi-ares:pr-6" corresponds with name "edence/ohdsi-ares")
-            first_tag = next(tag for tag in metadata['tags'] if tag.startswith(name))
-
+            # inspect the manifest
             inspect_cmd = "docker buildx imagetools inspect".split()
             inspect_cmd.append(first_tag)
             subprocess.check_call(inspect_cmd)
