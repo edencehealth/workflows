@@ -119,10 +119,11 @@ name: docker
           Username or Key ID used to log into the registry
         required: false
 
+
+# This file follows the technique described in the Docker documentation (as of 17-Mar-2025):
+# https://docs.docker.com/build/ci/github-actions/multi-platform/#distribute-build-across-multiple-runners
 jobs:
   build:
-    # https://docs.github.com/en/actions/examples/using-scripts-to-test-your-code-on-a-runner#example-workflow
-    # https://docs.docker.com/build/ci/github-actions/multi-platform/#distribute-build-across-multiple-runners
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: true
