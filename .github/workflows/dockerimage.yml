@@ -272,6 +272,9 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - build
+    env:
+      DOCKER_LOGIN: ${{ secrets.dockerhub_username != '' && secrets.dockerhub_token != '' }}
+      REGISTRY_LOGIN: ${{ secrets.registry_username != '' && secrets.registry_password != '' }}
     steps:
       # https://github.com/actions/download-artifact
       - name: Download digests
@@ -306,7 +309,7 @@ jobs:
 
       # https://github.com/docker/login-action
       - name: Login to Docker Hub
-        if: ${{ inputs.dockerhub_org != '' }}
+        if: ${{ inputs.dockerhub_org != '' && env.DOCKER_LOGIN == 'true' }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.dockerhub_username }}
@@ -323,7 +326,7 @@ jobs:
 
       # https://github.com/docker/login-action
       - name: Login to generic container registry
-        if: ${{ inputs.registry != '' }}
+        if: ${{ inputs.registry != '' && env.REGISTRY_LOGIN == 'true' }}
         uses: docker/login-action@v3
         with:
           registry: ${{ inputs.registry }}
