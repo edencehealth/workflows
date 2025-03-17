@@ -338,6 +338,7 @@ jobs:
         shell: python
         env:
           NAMELIST: ${{ needs.build.outputs.namelist }}
+          DIGESTS: ${{ runner.temp }}/digests
         run: |
           #!/usr/bin/env python3
           import os
@@ -359,7 +360,7 @@ jobs:
               create_cmd.extend(["--tag", tag])
             for annotation in metadata['annotations']:
               create_cmd.extend(["--annotation", annotation])
-            for digest in os.listdir("/tmp/digests"):
+            for digest in os.listdir(os.environ["DIGESTS"]):
               create_cmd.append(f"{name}@sha256:{digest}")
 
             subprocess.check_call(create_cmd)
