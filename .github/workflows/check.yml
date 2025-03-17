@@ -18,13 +18,12 @@ jobs:
 
       # https://github.com/actions/setup-python
       - name: set up python
-        uses: actions/setup-python@v4
-        with:
+        uses: actions/setup-python@v5
+        # with:
           # cache: 'pip' # caching pip dependencies
-          python-version: '3.11'
 
       # https://github.com/pre-commit/action
       - name: run pre-commit
-        uses: pre-commit/action@v3.0.0
+        uses: pre-commit/action@v3.0.1
         env:
           SKIP: no-commit-to-branch

@@ -41,10 +41,12 @@ name: docker
         default: edencehealth
       platforms:
         description: >-
-          The comma-separated target platform(s) to use when building the image
+          Quoted JSON string specifying a list of target platform(s) to use
+          when building the image
         required: false
         type: string
-        default: linux/amd64,linux/arm64
+        default: |-
+          ["linux/amd64","linux/arm64"]
       push:
         description: >-
           Whether to push the image to the container registries (building
@@ -86,12 +88,12 @@ name: docker
         required: false
         type: string
         default: |-
-          ["ubuntu-latest"]
+          ["ubuntu-latest", "ubuntu-latest-arm"]
     outputs:
       tags:
         description: >-
           The docker tags that were ultimately generated
-        value: ${{ jobs.image.outputs.tags }}
+        value: ${{ jobs.build.outputs.tags }}
     secrets:
       dockerhub_token:
         description: >-
@@ -111,12 +113,19 @@ name: docker
         required: false
 
 jobs:
-  image:
+  build:
     # https://docs.github.com/en/actions/examples/using-scripts-to-test-your-code-on-a-runner#example-workflow
-    runs-on: ${{ fromJSON(inputs.runs_on) }}
+    # https://docs.docker.com/build/ci/github-actions/multi-platform/#distribute-build-across-multiple-runners
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: true
+      matrix:
+        runner: ${{ fromJSON(inputs.runs_on) }}
     outputs:
       tags: |-
         ${{ steps.meta.outputs.tags }}
+      digest: ${{ steps.build.outputs.digest }}
+      namelist: ${{ steps.convert.outputs.namelist }}
     steps:
 
       # https://github.com/actions/checkout
@@ -176,8 +185,46 @@ jobs:
             type=ref,event=pr
             type=sha
 
+      - name: Convert Values
+        id: convert
+        shell: python
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+          RUNNER: ${{ matrix.runner }}
+        run: |
+          #!/usr/bin/env python3
+          import os
+          import shlex
+
+          def gh_output(name: str, value: str) -> None:
+              """write a value to the github workflow step output"""
+              output_file = os.environ["GITHUB_OUTPUT"]
+              with open(output_file, "at", encoding="utf-8") as out:
+                  out.write(f"{name}={value}\n")
+
+          tags = os.environ["TAGS"]
+          runner = os.environ["RUNNER"]
+
+          # with tags like this:
+          # "tags": [
+          #   "ghcr.io/edencehealth/ohdsi-ares:pr-6",
+          #   "ghcr.io/edencehealth/ohdsi-ares:sha-16b6dae",
+          #   "edence/ohdsi-ares:pr-6",
+          #   "edence/ohdsi-ares:sha-16b6dae"
+          # ],
+          # the namelist is "edence/ohdsi-ares,ghcr.io/edencehealth/ohdsi-ares"
+
+          base_tag_set = {tag.split(":", 1)[0] for tag in tags.splitlines()}
+          namelist = shlex.quote(",".join(sorted(base_tag_set))) # edence/ohdsi-ares,ghcr.io/edencehealth/ohdsi-ares
+
+          gh_output("namelist", namelist) # edence/ohdsi-ares,ghcr.io/edencehealth/ohdsi-ares
+          gh_output("quoted_namelist", f'"{namelist}"') # once again, with FEELING!
+          gh_output("platform", "linux/arm64" if "arm" in runner else "linux/amd64")
+          gh_output("platform_pair", runner.replace('/', '-')) # e.g. "linux-amd64"
+
       # https://github.com/docker/build-push-action
-      - name: Build and push Docker image
+      - name: Build and push-by-digest
+        id: build
         uses: docker/build-push-action@v5
         with:
           build-args: |-
@@ -191,10 +238,127 @@ jobs:
           context: ${{ inputs.context_path }}
           labels: |-
             ${{ steps.meta.outputs.labels }}
-          platforms: ${{ inputs.platforms }}
-          push: ${{ inputs.push }}
+          # outputs: type=image,name=${{ steps.convert.outputs.quoted_namelist }},push-by-digest=true,name-canonical=true,push=${{ inputs.push }}
+          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
+          platforms: ${{ steps.convert.outputs.platform }}
           tags: |-
             ${{ steps.meta.outputs.tags }}
+
+      - name: Export digest
+        run: |
+          mkdir -p ${{ runner.temp }}/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+
+      # https://github.com/actions/upload-artifact
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ steps.convert.outputs.platform_pair }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+
+  merge:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      # https://github.com/actions/download-artifact
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      # https://github.com/docker/setup-buildx-action
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # https://github.com/docker/metadata-action
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |-
+            ${{ inputs.github_org != '' && format('ghcr.io/{0}/{1}', inputs.github_org, inputs.container_name) || '' }}
+            ${{ inputs.dockerhub_org != '' && format('{0}/{1}', inputs.dockerhub_org, inputs.container_name) || '' }}
+            ${{ inputs.registry_paths != '' && inputs.registry_paths || '' }}
+          tags: |-
+            type=schedule
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=ref,event=branch
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+            type=ref,event=pr
+            type=sha
+
+      # https://github.com/docker/login-action
+      - name: Login to Docker Hub
+        if: ${{ inputs.dockerhub_org != '' }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.dockerhub_username }}
+          password: ${{ secrets.dockerhub_token }}
+
+      # https://github.com/docker/login-action
+      - name: Login to GitHub Container Registry
+        if: ${{ inputs.github_org != '' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # https://github.com/docker/login-action
+      - name: Login to generic container registry
+        if: ${{ inputs.registry != '' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ inputs.registry }}
+          username: ${{ secrets.registry_username }}
+          password: ${{ secrets.registry_password }}
+
+      - name: Create and push manifest list
+        id: merge-push
+        shell: python
+        env:
+          NAMELIST: ${{ needs.build.outputs.namelist }}
+        run: |
+          #!/usr/bin/env python3
+          import os
+          import json
+          import subprocess
+
+          def gh_output(name: str, value: str) -> None:
+              """write a value to the github workflow step output"""
+              output_file = os.environ["GITHUB_OUTPUT"]
+              with open(output_file, "at", encoding="utf-8") as out:
+                  out.write(f"{name}={value}\n")
+
+          metadata = json.loads(os.environ["DOCKER_METADATA_OUTPUT_JSON"])
+          names = os.environ["NAMELIST"].split(",")
+
+          for name in names:
+            create_cmd = "docker buildx imagetools create".split()
+            for tag in metadata.tags:
+              create_cmd.extend(["--tag", tag])
+            for annotation in metadata.annotations:
+              create_cmd.extend(["--annotation", annotation])
+            for digest in os.listdir("/tmp/digests"):
+              create_cmd.append(f"{name}@sha256:{digest}")
+
+            subprocess.check_call(create_cmd)
+
+            # get the first tag that corresponds with name (e.g. tag "edence/ohdsi-ares:pr-6" corresponds with name "edence/ohdsi-ares")
+            first_tag = next(tag for tag in metadata.tags if tag.startswith(name))
+
+            inspect_cmd = "docker buildx imagetools inspect".split()
+            inspect_cmd.append(first_tag)
+            subprocess.check_call(inspect_cmd)
 
   readme:
     if: >-
