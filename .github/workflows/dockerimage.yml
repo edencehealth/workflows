@@ -229,7 +229,7 @@ jobs:
           namelist = shlex.quote(",".join(sorted(base_tag_set))) # edence/ohdsi-ares,ghcr.io/edencehealth/ohdsi-ares
 
           gh_output("namelist", namelist) # edence/ohdsi-ares,ghcr.io/edencehealth/ohdsi-ares
-          gh_output("quoted_namelist", f'"{namelist}"') # once again, with FEELING!
+          gh_output("quoted_namelist", f'\"name={namelist}\"') # once again, with FEELING!
           gh_output("platform", "linux/arm64" if "arm" in runner else "linux/amd64")
           gh_output("platform_pair", runner.replace('/', '-')) # e.g. "linux-amd64"
 
@@ -249,7 +249,7 @@ jobs:
           context: ${{ inputs.context_path }}
           labels: |-
             ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ steps.convert.outputs.namelist }},push-by-digest=true,name-canonical=true,push=${{ inputs.push }}
+          outputs: type=image,${{ steps.convert.outputs.quoted_namelist }},push-by-digest=true,name-canonical=true,push=${{ inputs.push }}
           platforms: ${{ steps.convert.outputs.platform }}
 
       - name: Export digest
