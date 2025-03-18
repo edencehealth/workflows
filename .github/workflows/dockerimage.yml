@@ -242,8 +242,8 @@ jobs:
             GIT_COMMIT=${{ github.sha }}
             GIT_TAG=${{ github.ref_name }}
             ${{ inputs.build_args != '' && inputs.build_args || '' }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=build-${{ steps.convert.outputs.platform_pair }}
+          cache-to: type=gha,mode=max,scope=build-${{ steps.convert.outputs.platform_pair }}
           context: ${{ inputs.context_path }}
           labels: |-
             ${{ steps.meta.outputs.labels }}
