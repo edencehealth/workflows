@@ -267,7 +267,7 @@ jobs:
 
 
   merge:
-    if: ${{ inputs.push == 'true' }}
+    if: ${{ inputs.push }}
     runs-on: ubuntu-latest
     needs:
       - build
