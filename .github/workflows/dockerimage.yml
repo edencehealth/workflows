@@ -294,8 +294,8 @@ jobs:
         with:
           images: |-
             ${{ inputs.github_org != '' && format('ghcr.io/{0}/{1}', inputs.github_org, inputs.container_name) || '' }}
-            ${{ inputs.dockerhub_org != '' && format('{0}/{1}', inputs.dockerhub_org, inputs.container_name) || '' }}
-            ${{ inputs.registry_paths != '' && inputs.registry_paths || '' }}
+            ${{ inputs.dockerhub_org != '' && env.DOCKER_LOGIN == 'true' && format('{0}/{1}', inputs.dockerhub_org, inputs.container_name) || '' }}
+            ${{ inputs.registry_paths != '' && env.REGISTRY_LOGIN == 'true' && inputs.registry_paths || '' }}
           tags: |-
             type=schedule
             type=semver,pattern={{version}}
