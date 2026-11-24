@@ -36,3 +36,15 @@ jobs:
       context_path: .tester
       push: true
     secrets: inherit
+
+  # A second image in the same run, as callers that publish a backend and a
+  # frontend do: each merge job must find only its own image's digests.
+  trialrun-second-image:
+    needs: check
+    uses: "./.github/workflows/dockerimage.yml"
+    with:
+      container_name: ci-workflow-tester-second
+      context_path: .tester
+      dockerhub_org: ""
+      push: true
+    secrets: inherit

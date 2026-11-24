@@ -134,6 +134,7 @@ jobs:
         ${{ steps.meta.outputs.tags }}
       digest: ${{ steps.build.outputs.digest }}
       namelist: ${{ steps.convert.outputs.namelist }}
+      artifact_key: ${{ steps.convert.outputs.artifact_key }}
     env:
       DOCKER_LOGIN: ${{ secrets.dockerhub_username != '' && secrets.dockerhub_token != '' }}
       REGISTRY_LOGIN: ${{ secrets.registry_username != '' && secrets.registry_password != '' }}
@@ -203,9 +204,12 @@ jobs:
         env:
           TAGS: ${{ steps.meta.outputs.tags }}
           RUNNER: ${{ matrix.runner }}
+          CONTAINER_NAME: ${{ inputs.container_name }}
         run: |
           #!/usr/bin/env python3
+          import hashlib
           import os
+          import re
           import shlex
 
 
@@ -231,6 +235,17 @@ jobs:
           gh_output("platform", "linux/arm64" if "arm" in runner else "linux/amd64")
           gh_output("platform_pair", runner.replace("/", "-"))  # e.g. "linux-amd64"
 
+          # Names this image's digest artifacts. A caller that builds two images
+          # in one workflow run (say a backend and a frontend) would otherwise
+          # upload two artifacts with the same name, and each merge job would
+          # pick up the other image's digest at random ("<name>@sha256:...: not
+          # found"). The hash keeps two images with the same container_name
+          # apart (e.g. pushed to different registries). The build cache scope uses
+          # it too, so two images in one run do not overwrite each other's cache.
+          slug = re.sub(r"[^A-Za-z0-9._-]+", "-", os.environ["CONTAINER_NAME"]).strip("-") or "image"
+          names_hash = hashlib.sha256(",".join(sorted(name_set)).encode()).hexdigest()[:8]
+          gh_output("artifact_key", f"{slug}-{names_hash}")  # e.g. "ohdsi-ares-1a2b3c4d"
+
       # https://github.com/docker/build-push-action
       - name: Build and push-by-digest
         id: build
@@ -242,8 +257,8 @@ jobs:
             GIT_COMMIT=${{ github.sha }}
             GIT_TAG=${{ github.ref_name }}
             ${{ inputs.build_args != '' && inputs.build_args || '' }}
-          cache-from: type=gha,scope=build-${{ steps.convert.outputs.platform_pair }}
-          cache-to: type=gha,mode=max,scope=build-${{ steps.convert.outputs.platform_pair }}
+          cache-from: type=gha,scope=build-${{ steps.convert.outputs.artifact_key }}-${{ steps.convert.outputs.platform_pair }}
+          cache-to: type=gha,mode=max,scope=build-${{ steps.convert.outputs.artifact_key }}-${{ steps.convert.outputs.platform_pair }}
           context: ${{ inputs.context_path }}
           labels: |-
             ${{ steps.meta.outputs.labels }}
@@ -260,7 +275,7 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-${{ steps.convert.outputs.platform_pair }}
+          name: digests-${{ steps.convert.outputs.artifact_key }}-${{ steps.convert.outputs.platform_pair }}
           path: ${{ runner.temp }}/digests/*
           if-no-files-found: error
           retention-days: 1
@@ -280,7 +295,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: ${{ runner.temp }}/digests
-          pattern: digests-*
+          pattern: digests-${{ needs.build.outputs.artifact_key }}-*
           merge-multiple: true
 
       # https://github.com/docker/setup-buildx-action
