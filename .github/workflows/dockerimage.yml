@@ -240,7 +240,8 @@ jobs:
           # upload two artifacts with the same name, and each merge job would
           # pick up the other image's digest at random ("<name>@sha256:...: not
           # found"). The hash keeps two images with the same container_name
-          # apart (e.g. pushed to different registries).
+          # apart (e.g. pushed to different registries). The build cache scope uses
+          # it too, so two images in one run do not overwrite each other's cache.
           slug = re.sub(r"[^A-Za-z0-9._-]+", "-", os.environ["CONTAINER_NAME"]).strip("-") or "image"
           names_hash = hashlib.sha256(",".join(sorted(name_set)).encode()).hexdigest()[:8]
           gh_output("artifact_key", f"{slug}-{names_hash}")  # e.g. "ohdsi-ares-1a2b3c4d"
@@ -256,8 +257,8 @@ jobs:
             GIT_COMMIT=${{ github.sha }}
             GIT_TAG=${{ github.ref_name }}
             ${{ inputs.build_args != '' && inputs.build_args || '' }}
-          cache-from: type=gha,scope=build-${{ steps.convert.outputs.platform_pair }}
-          cache-to: type=gha,mode=max,scope=build-${{ steps.convert.outputs.platform_pair }}
+          cache-from: type=gha,scope=build-${{ steps.convert.outputs.artifact_key }}-${{ steps.convert.outputs.platform_pair }}
+          cache-to: type=gha,mode=max,scope=build-${{ steps.convert.outputs.artifact_key }}-${{ steps.convert.outputs.platform_pair }}
           context: ${{ inputs.context_path }}
           labels: |-
             ${{ steps.meta.outputs.labels }}
